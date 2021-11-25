@@ -39,7 +39,7 @@ EncMotors::EncMotors() {
 
   //   m1_pwm.setPWM(1, M1_PWM, 1000, power);
   m1_pwm.setMode(1,TIMER_OUTPUT_COMPARE_PWM1,M1_PWM);
-  m1_pwm.setOverflow(1000, HERTZ_FORMAT);
+  m1_pwm.setOverflow(15000, HERTZ_FORMAT);
   m1_pwm.setCaptureCompare(1, 0, PERCENT_COMPARE_FORMAT);
   m1_pwm.resume();
 }

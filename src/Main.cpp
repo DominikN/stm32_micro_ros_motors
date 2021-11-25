@@ -74,16 +74,16 @@ void setup() {
   // ================== TESTING MOTORS ==========================
   int i = 100;
 
-  // Motor1.setPower(50);
+  Motor1.setPower(35);
 
   while (1) {
     // Serial.printf("PWM = %d\r\n", i);
     // i--;
     // Motor1.setPower(i);
-    Motor1.setPower(-30);
-    delay(1000);
-    Motor1.setPower(30);
-    delay(1000);
+    // Motor1.setPower(-30);
+    // delay(1000);
+    // Motor1.setPower(30);
+    // delay(1000);
   }
 
   // =============================================================
