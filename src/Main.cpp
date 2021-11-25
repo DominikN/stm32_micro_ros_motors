@@ -10,6 +10,8 @@
 #include <rclc/rclc.h>
 #include <std_msgs/msg/string.h>
 
+#include "EncMotors.h"
+
 #define CLIENT_IP "192.168.1.177"
 #define AGENT_IP "192.168.1.176"
 #define AGENT_PORT 8888
@@ -59,6 +61,8 @@ void subscription_callback(const void *msgin) {
 static void rclc_spin_task(void *p);
 static void chatter_publisher_task(void *p);
 
+EncMotors Motor1;
+
 void setup() {
   portBASE_TYPE s1, s2;
 
@@ -66,6 +70,23 @@ void setup() {
   Serial.setRx(PA10);
   Serial.setTx(PA9);
   Serial.begin(115200);
+
+  // ================== TESTING MOTORS ==========================
+  int i = 100;
+
+  // Motor1.setPower(50);
+
+  while (1) {
+    // Serial.printf("PWM = %d\r\n", i);
+    // i--;
+    // Motor1.setPower(i);
+    Motor1.setPower(-30);
+    delay(1000);
+    Motor1.setPower(30);
+    delay(1000);
+  }
+
+  // =============================================================
 
   pinMode(LED_PIN, OUTPUT);
   digitalWrite(LED_PIN, HIGH);
@@ -120,7 +141,7 @@ void setup() {
     while (1)
       ;
   }
-  
+
   // start FreeRTOS
   vTaskStartScheduler();
 }
