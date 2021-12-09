@@ -1,5 +1,7 @@
 # micro_ros_stm32_template 
 
+TODO: zrobić fork frameworka STM32Duino i dodać tam wsparcie dla enkoderów kwadraturowych
+
 Boilerplate to create a project with:
 
 **STM32 + Ethernet + micro-ROS + FreeRTOS + Arduino + PlatformIO**  

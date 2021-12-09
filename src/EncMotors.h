@@ -12,6 +12,7 @@ class EncMotors {
 
     uint8_t status();
     void setPower(int power);
+    uint16_t getEnc();
 
 //   private:
 //     struct tcp_struct *_tcp_client;

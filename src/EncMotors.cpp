@@ -25,6 +25,7 @@
 #define M2_ILIM PG15
 
 HardwareTimer m1_pwm(M1_PWM_TIM);
+TIM_HandleTypeDef tim_m1_enc;
 
 EncMotors::EncMotors() {
   //   pinMode(M1_PWM, OUTPUT);
@@ -42,6 +43,15 @@ EncMotors::EncMotors() {
   m1_pwm.setOverflow(15000, HERTZ_FORMAT);
   m1_pwm.setCaptureCompare(1, 0, PERCENT_COMPARE_FORMAT);
   m1_pwm.resume();
+
+  tim_m1_enc.Instance = M1_ENC_TIM;
+	tim_m1_enc.Init.Period = 0xff;
+	tim_m1_enc.Init.Prescaler = 1;
+	tim_m1_enc.Init.ClockDivision = 0;
+	tim_m1_enc.Init.CounterMode = TIM_COUNTERMODE_CENTERALIGNED1;
+	tim_m1_enc.Init.RepetitionCounter = 0;
+	tim_m1_enc.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  HAL_TIM_Encoder_Start(&tim_m1_enc, TIM_CHANNEL_ALL);
 }
 
 void EncMotors::setPower(int power) {
@@ -56,4 +66,8 @@ void EncMotors::setPower(int power) {
     digitalWrite(M1B_IN, HIGH);
   }
   m1_pwm.setCaptureCompare(1, power, PERCENT_COMPARE_FORMAT);
+}
+
+uint16_t EncMotors::getEnc() {
+
 }
