@@ -88,7 +88,7 @@ void setup() {
   // Open serial communications and wait for port to open:
   Serial.setRx(PA10);
   Serial.setTx(PA9);
-  Serial.begin(115200);
+  Serial.begin(460800);
 
   // ================== TESTING MOTORS ==========================
   // int i = 100;
@@ -140,8 +140,7 @@ void setup() {
       "chatter"));
 
   // create timer,
-  const unsigned int timer_timeout = 100;
-  RCCHECK(rclc_timer_init_default(&timer, &support, RCL_MS_TO_NS(timer_timeout),
+  RCCHECK(rclc_timer_init_default(&timer, &support, RCL_MS_TO_NS(50),
                                   timer_callback));
 
   // create executor
@@ -152,7 +151,7 @@ void setup() {
 
   // create spin task
   s1 = xTaskCreate(rclc_spin_task, "rclc_spin_task",
-                   configMINIMAL_STACK_SIZE + 1000, NULL, tskIDLE_PRIORITY + 0,
+                   configMINIMAL_STACK_SIZE + 1000, NULL, tskIDLE_PRIORITY + 1,
                    NULL);
 
   // create spin task
@@ -177,7 +176,10 @@ static void rclc_spin_task(void *p) {
   TickType_t xLastWakeTime = xTaskGetTickCount();
   while (1) {
     RCSOFTCHECK(rclc_executor_spin(&executor));
-    vTaskDelayUntil(&xLastWakeTime, 10);
+    // RCSOFTCHECK(rclc_executor_spin_some(&executor, 2000));
+    // RCSOFTCHECK(rclc_executor_spin_some(&executor,0));
+    // Serial.printf("\r\nt: %d\r\n", xTaskGetTickCount());
+    vTaskDelayUntil(&xLastWakeTime, 2);
   }
 }
 
