@@ -124,7 +124,7 @@ extern char _Min_Stack_Size; /* Defined in the linker script */
 #define configGENERATE_RUN_TIME_STATS     1
 #define configUSE_STATS_FORMATTING_FUNCTIONS 1
 #define configSUPPORT_DYNAMIC_ALLOCATION 1
-#define configSUPPORT_STATIC_ALLOCATION 1
+// #define configSUPPORT_STATIC_ALLOCATION 1
 
 extern void vConfigureTimerForRunTimeStats( void );
 extern uint32_t vGetTimerValueForRunTimeStats( void );
