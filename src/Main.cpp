@@ -30,6 +30,7 @@
   {                                \
     rcl_ret_t temp_rc = fn;        \
     if ((temp_rc != RCL_RET_OK)) { \
+      Serial.printf("o");          \
     }                              \
   }
 
@@ -47,6 +48,7 @@ byte mac[] = {0x02, 0x47, 0x00, 0x00, 0x00, 0x01};
 
 void error_loop() {
   while (1) {
+    Serial.printf("in error loop");
     digitalWrite(LED_PIN, !digitalRead(LED_PIN));
     delay(100);
   }
@@ -54,8 +56,8 @@ void error_loop() {
 
 void subscription_callback(const void *msgin) {
   const std_msgs__msg__String *msg = (const std_msgs__msg__String *)msgin;
-  // Serial.printf("[%s]: I heard: [%s]\r\n", NODE_NAME,
-  //               micro_ros_string_utilities_get_c_str(msg->data));
+  Serial.printf("[%s]: I heard: [%s]\r\n", NODE_NAME,
+                micro_ros_string_utilities_get_c_str(msg->data));
 }
 
 static void rclc_spin_task(void *p);
@@ -129,11 +131,11 @@ void setup() {
   // create publisher task
   s1 = xTaskCreate(
       chatter_publisher_task, (const portCHAR *)"chatter_publisher_task",
-      configMINIMAL_STACK_SIZE + 1000, NULL, tskIDLE_PRIORITY + 1, NULL);
+      configMINIMAL_STACK_SIZE + 1000, NULL, tskIDLE_PRIORITY + 0, NULL);
 
   // create spin task
   s2 = xTaskCreate(rclc_spin_task, "rclc_spin_task",
-                   configMINIMAL_STACK_SIZE + 1000, NULL, tskIDLE_PRIORITY + 1,
+                   configMINIMAL_STACK_SIZE + 1000, NULL, tskIDLE_PRIORITY + 0,
                    NULL);
 
   // create spin task
@@ -141,12 +143,12 @@ void setup() {
                    configMINIMAL_STACK_SIZE + 2000, NULL, tskIDLE_PRIORITY + 1,
                    NULL);
 
-  // check for creation errors
-  if (s1 != pdPASS || s2 != pdPASS || s3 != pdPASS) {
-    Serial.println(F("Creation problem"));
-    while (1)
-      ;
-  }
+  // // check for creation errors
+  // if (s1 != pdPASS || s2 != pdPASS || s3 != pdPASS) {
+  //   Serial.println(F("Creation problem"));
+  //   while (1)
+  //     ;
+  // }
 
   // start FreeRTOS
   vTaskStartScheduler();
@@ -157,7 +159,7 @@ static void rclc_spin_task(void *p) {
 
   TickType_t xLastWakeTime = xTaskGetTickCount();
   while (1) {
-    RCSOFTCHECK(rclc_executor_spin_some(&executor, 10));
+    RCSOFTCHECK(rclc_executor_spin(&executor));
     vTaskDelayUntil(&xLastWakeTime, 10);
   }
 }
@@ -170,7 +172,7 @@ static void chatter_publisher_task(void *p) {
     char buffer[50];
     static int cnt = 0;
     sprintf(buffer, "Hello World: %d, sys_clk: %d", cnt++, xTaskGetTickCount());
-    // Serial.printf("Publishing: %s\r\n", buffer);
+    Serial.printf("Publishing: %s\r\n", buffer);
 
     msg.data = micro_ros_string_utilities_set(msg.data, buffer);
 
@@ -193,7 +195,7 @@ static void runtime_stats_task(void *p) {
 void loop() {
   // Serial.printf("Error ");
   digitalWrite(LED_PIN, !digitalRead(LED_PIN));
-  delay(1000);
+  // delay(1000);
 }
 
 
