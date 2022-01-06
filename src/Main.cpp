@@ -41,6 +41,7 @@ rclc_executor_t executor;
 rclc_support_t support;
 rcl_allocator_t allocator;
 rcl_node_t node;
+rcl_timer_t timer;
 
 IPAddress client_ip;
 IPAddress agent_ip;
@@ -58,6 +59,21 @@ void subscription_callback(const void *msgin) {
   const std_msgs__msg__String *msg = (const std_msgs__msg__String *)msgin;
   Serial.printf("[%s]: I heard: [%s]\r\n", NODE_NAME,
                 micro_ros_string_utilities_get_c_str(msg->data));
+}
+
+char buffer[100];
+
+void timer_callback(rcl_timer_t *timer, int64_t last_call_time) {
+  RCLC_UNUSED(last_call_time);
+  if (timer != NULL) {
+    static int cnt = 0;
+    sprintf(buffer, "Hello World: %d, sys_clk: %d", cnt++, xTaskGetTickCount());
+    Serial.printf("Publishing: %s\r\n", buffer);
+
+    msg.data = micro_ros_string_utilities_set(msg.data, buffer);
+
+    RCSOFTCHECK(rcl_publish(&publisher, &msg, NULL));
+  }
 }
 
 static void rclc_spin_task(void *p);
@@ -123,32 +139,33 @@ void setup() {
       &subscriber, &node, ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, String),
       "chatter"));
 
+  // create timer,
+  const unsigned int timer_timeout = 100;
+  RCCHECK(rclc_timer_init_default(&timer, &support, RCL_MS_TO_NS(timer_timeout),
+                                  timer_callback));
+
   // create executor
-  RCCHECK(rclc_executor_init(&executor, &support.context, 1, &allocator));
+  RCCHECK(rclc_executor_init(&executor, &support.context, 2, &allocator));
   RCCHECK(rclc_executor_add_subscription(&executor, &subscriber, &msg,
                                          &subscription_callback, ON_NEW_DATA));
-
-  // create publisher task
-  s1 = xTaskCreate(
-      chatter_publisher_task, (const portCHAR *)"chatter_publisher_task",
-      configMINIMAL_STACK_SIZE + 1000, NULL, tskIDLE_PRIORITY + 0, NULL);
+  RCCHECK(rclc_executor_add_timer(&executor, &timer));
 
   // create spin task
-  s2 = xTaskCreate(rclc_spin_task, "rclc_spin_task",
+  s1 = xTaskCreate(rclc_spin_task, "rclc_spin_task",
                    configMINIMAL_STACK_SIZE + 1000, NULL, tskIDLE_PRIORITY + 0,
                    NULL);
 
   // create spin task
-  s3 = xTaskCreate(runtime_stats_task, "runtime_stats_task",
+  s2 = xTaskCreate(runtime_stats_task, "runtime_stats_task",
                    configMINIMAL_STACK_SIZE + 2000, NULL, tskIDLE_PRIORITY + 1,
                    NULL);
 
-  // // check for creation errors
-  // if (s1 != pdPASS || s2 != pdPASS || s3 != pdPASS) {
-  //   Serial.println(F("Creation problem"));
-  //   while (1)
-  //     ;
-  // }
+  // check for creation errors
+  if (s1 != pdPASS || s2 != pdPASS) {
+    Serial.println(F("Creation problem"));
+    while (1)
+      ;
+  }
 
   // start FreeRTOS
   vTaskStartScheduler();
@@ -164,55 +181,34 @@ static void rclc_spin_task(void *p) {
   }
 }
 
-static void chatter_publisher_task(void *p) {
-  UNUSED(p);
-
-  TickType_t xLastWakeTime = xTaskGetTickCount();
-  while (1) {
-    char buffer[50];
-    static int cnt = 0;
-    sprintf(buffer, "Hello World: %d, sys_clk: %d", cnt++, xTaskGetTickCount());
-    Serial.printf("Publishing: %s\r\n", buffer);
-
-    msg.data = micro_ros_string_utilities_set(msg.data, buffer);
-
-    RCSOFTCHECK(rcl_publish(&publisher, &msg, NULL));
-    // vTaskDelay(pdMS_TO_TICKS(1000));
-    vTaskDelayUntil(&xLastWakeTime, 100);
-  }
-}
-
 static void runtime_stats_task(void *p) {
   char buf[2000];
   Serial.printf("runtime stats task started");
-  while(1) {
+  while (1) {
     vTaskGetRunTimeStats(buf);
-    Serial.printf("\r\n%s\r\n-------------",buf);
+    Serial.printf("\r\n%s\r\n-------------", buf);
     vTaskDelay(2000);
   }
 }
 
 void loop() {
-  // Serial.printf("Error ");
   digitalWrite(LED_PIN, !digitalRead(LED_PIN));
-  // delay(1000);
+  delay(1000);
 }
 
-
-// =========== TEMP ====================
+// =========== Runtime stats ====================
 
 HardwareTimer stats_tim(TIM5);  // TIM5 - 32 bit
 
-void vConfigureTimerForRunTimeStats( void )
-{ 
+void vConfigureTimerForRunTimeStats(void) {
   //   m1_pwm.setPWM(1, M1_PWM, 1000, power);
-    stats_tim.setPrescaleFactor(1680); // Set prescaler to 2564 => timer frequency = 168MHz/1680 = 100000 Hz (from prediv'd by 1 clocksource of 168 MHz)
-    stats_tim.setOverflow(0xffffffff); // Set overflow to 32761 => timer frequency = 65522 Hz / 32761 = 2 Hz
-    stats_tim.refresh(); // Make register changes take effect
-    stats_tim.resume(); // Start
+  stats_tim.setPrescaleFactor(
+      1680);  // Set prescaler to 2564 => timer frequency = 168MHz/1680 = 100000
+              // Hz (from prediv'd by 1 clocksource of 168 MHz)
+  stats_tim.setOverflow(0xffffffff);  // Set overflow to 32761 => timer
+                                      // frequency = 65522 Hz / 32761 = 2 Hz
+  stats_tim.refresh();                // Make register changes take effect
+  stats_tim.resume();                 // Start
 }
 
-uint32_t vGetTimerValueForRunTimeStats( void )
-{
-  return stats_tim.getCount();
-}
+uint32_t vGetTimerValueForRunTimeStats(void) { return stats_tim.getCount(); }
